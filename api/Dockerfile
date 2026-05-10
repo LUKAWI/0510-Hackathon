@@ -2,10 +2,12 @@ FROM modelscope-registry.cn-beijing.cr.aliyuncs.com/modelscope-repo/python:3.10
 
 WORKDIR /home/user/app
 
-COPY api/requirements.txt /home/user/app/
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt api/
+RUN pip install --no-cache-dir -r api/requirements.txt
 
-COPY api/ /home/user/app/api/
+COPY . api/
+
+ENV PYTHONPATH=/home/user/app
 
 EXPOSE 7860
 

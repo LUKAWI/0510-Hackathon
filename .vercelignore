@@ -6,8 +6,6 @@
 !README.md
 .env
 .env.*
-ms_deploy.json
-backend.Dockerfile
 test_backend.py
 stderr.txt
 stdout.txt
