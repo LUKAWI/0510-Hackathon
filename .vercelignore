@@ -1,7 +1,7 @@
-api/
-api/*
-textbooks_md/
-docs/
+/api/
+/api/*
+/textbooks_md/
+/docs/
 *.md
 !README.md
 .env
