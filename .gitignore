@@ -46,6 +46,15 @@ venv/
 coverage/
 .nyc_output/
 
+# Deployment (contains secrets, only for ModelScope Studio)
+ms_deploy.json
+
 # Temp files
 tmp/
 temp/
+_vite_temp/
+
+# Temp runtime outputs
+stderr.txt
+stdout.txt
+test_backend.py
