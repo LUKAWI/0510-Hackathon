@@ -42,6 +42,8 @@ interface StatusConfig {
 }
 
 const STATUS_MAP: Record<TextbookStatus, StatusConfig> = {
+  uploading: { label: "上传中", variant: "secondary" },
+  parsing: { label: "解析中", variant: "secondary" },
   processing: { label: "处理中", variant: "secondary" },
   ready: { label: "就绪", variant: "default" },
   error: { label: "错误", variant: "destructive" },

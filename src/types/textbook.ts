@@ -10,7 +10,7 @@
 export type TextbookFileType = "pdf" | "md" | "docx";
 
 /** 教材整体状态 */
-export type TextbookStatus = "processing" | "ready" | "error";
+export type TextbookStatus = "uploading" | "parsing" | "processing" | "ready" | "error";
 
 // ─── 索引状态 ────────────────────────────────────────────
 

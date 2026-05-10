@@ -80,7 +80,7 @@ function TextbookList({ className }: TextbookListProps) {
 
   const textbooks = useMemo(() => {
     if (!data) return [];
-    return "items" in data ? (data.items as readonly Textbook[]) : [];
+    return data as readonly Textbook[];
   }, [data]);
 
   const selectionMode = selectedIds.size > 0;

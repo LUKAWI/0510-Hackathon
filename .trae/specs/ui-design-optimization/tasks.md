@@ -48,7 +48,7 @@
   - [x] 确保聊天消息气泡在暗色模式下适配
   - **验证**: 系统切换暗色模式后，页面各区域颜色正确过渡
 
-- [ ] Task 6: 响应式布局细节优化
+- [x] Task 6: 响应式布局细节优化
   - [ ] Narrow 模式 (<1024px): 确保所有按钮触摸目标 ≥ 44×44px（通过 min-h/min-w + padding）
   - [ ] Narrow 模式: TopBar 面板切换按钮增大点击区域
   - [ ] Narrow 模式: 底部抽屉拖拽条视觉优化
@@ -66,7 +66,7 @@
   - [x] 对聊天消息列表滚动容器添加 `content-visibility: auto` CSS
   - **验证**: `npm run build` 通过，首屏 JS bundle 不增反降
 
-- [ ] Task 8: 全局排版一致性调整
+- [x] Task 8: 全局排版一致性调整
   - [ ] 统一面板标题样式：14px font-medium + 适当间距
   - [ ] 统一内容区文字：13-14px + leading-relaxed
   - [ ] 统一状态标签/徽章：11-12px
@@ -74,7 +74,7 @@
   - [ ] 确保所有中文文本使用正确的 letter-spacing
   - **验证**: 视觉检查各面板排版一致性
 
-- [ ] Task 9: 构建验证与修复
+- [x] Task 9: 构建验证与修复
   - [ ] 运行 `npm run build`，修复 TypeScript 和 CSS 编译错误
   - [ ] 运行 `npm run lint`，修复 ESLint 告警
   - [ ] 本地启动 `npm run dev`，手动浏览所有面板和交互

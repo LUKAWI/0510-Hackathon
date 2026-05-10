@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { TextbookList } from '@/components/textbook/TextbookList';
 import { FileUploadZone } from '@/components/textbook/FileUploadZone';
@@ -7,6 +7,7 @@ import { ErrorToast } from '@/components/global/ErrorToast';
 import { LoadingOverlay } from '@/components/global/LoadingOverlay';
 import { GraphSkeleton } from '@/components/global/LoadingSkeleton';
 import { useGraphStore } from '@/stores/graph';
+import { useGraphData } from '@/hooks/useGraphData';
 
 const GraphCanvas = lazy(() => import('@/components/graph/GraphCanvas').then(m => ({ default: m.GraphCanvas })));
 const GraphToolbar = lazy(() => import('@/components/graph/GraphToolbar').then(m => ({ default: m.GraphToolbar })));
@@ -25,6 +26,12 @@ function LeftContent() {
 function CenterContent() {
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const selectNode = useGraphStore((s) => s.selectNode);
+  const { nodes, edges, isLoading } = useGraphData();
+
+  const activeBooks = useMemo(
+    () => [...new Set(nodes.map((n) => n.bookName || n.textbookId).filter(Boolean))],
+    [nodes],
+  );
 
   return (
     <div className="relative flex h-full flex-col">
@@ -37,21 +44,22 @@ function CenterContent() {
       <div className="relative flex-1">
         <Suspense fallback={<GraphSkeleton />}>
           <GraphCanvas
-            nodes={[]}
-            edges={[]}
+            nodes={nodes}
+            edges={edges}
+            isLoading={isLoading}
             onNodeClick={(nodeId) => selectNode(nodeId)}
             className="h-full w-full"
           />
 
           <div className="absolute bottom-3 left-3">
-            <GraphLegend />
+            <GraphLegend activeBooks={activeBooks} />
           </div>
 
           {selectedNodeId && (
             <div className="absolute right-3 top-3 w-72">
               <NodeDetailPanel
-                nodes={[]}
-                edges={[]}
+                nodes={nodes}
+                edges={edges}
                 selectedNodeId={selectedNodeId}
               />
             </div>

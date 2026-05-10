@@ -10,8 +10,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from api.core.database import DatabasePool, init_schema, lifespan as db_lifespan
 from api.core.exceptions import register_exception_handlers

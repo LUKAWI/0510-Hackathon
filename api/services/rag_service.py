@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 
+import asyncpg
+
 from api.core.embedding import EmbeddingService
 from api.core.llm_client import LLMClient
 from api.core.vector_store import VectorStore
@@ -52,6 +54,7 @@ async def query_rag(
     llm_client: LLMClient,
     question: str,
     top_k: int = 5,
+    pool: asyncpg.Pool | None = None,
 ) -> dict:
     """执行 RAG 问答。
 
@@ -59,7 +62,8 @@ async def query_rag(
         {
             "answer": str,
             "citations": [{"textbook": str, "chapter": str, "snippet": str, "relevance": float}],
-            "source_chunks": [str]
+            "source_chunks": [str],
+            "graph_context": { ... } | None,
         }
     """
     query_embedding = embedding_service.encode_single(question)
@@ -75,7 +79,33 @@ async def query_rag(
             "answer": "当前知识库中未找到相关信息。请先上传教材并建立索引。",
             "citations": [],
             "source_chunks": [],
+            "graph_context": None,
         }
+
+    unit_ids: list[str] = []
+    for chunk in chunks:
+        uid = chunk.get("unit_id")
+        if uid:
+            unit_ids.append(uid)
+
+    graph_context: dict | None = None
+    if unit_ids and pool:
+        async with pool.acquire() as conn:
+            units = await conn.fetch(
+                "SELECT id, name, category FROM knowledge_units WHERE id = ANY($1::uuid[])",
+                unit_ids,
+            )
+            edges = await conn.fetch(
+                "SELECT e.source_id, e.target_id, e.relation_type FROM knowledge_edges e "
+                "WHERE e.source_id = ANY($1::uuid[]) OR e.target_id = ANY($1::uuid[])",
+                [str(u["id"]) for u in units],
+            )
+
+        if units:
+            graph_context = {
+                "nodes": [{"id": str(n["id"]), "label": n["name"], "type": n["category"]} for n in units],
+                "edges": [{"source": str(e["source_id"]), "target": str(e["target_id"]), "relation": e["relation_type"]} for e in edges],
+            }
 
     context = format_context(chunks)
     prompt = RAG_PROMPT.format(context=context, question=question)
@@ -103,4 +133,5 @@ async def query_rag(
         "answer": answer,
         "citations": citations,
         "source_chunks": source_chunks,
+        "graph_context": graph_context,
     }

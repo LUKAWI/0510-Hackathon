@@ -94,7 +94,7 @@ function ReportPanel({ className }: ReportPanelProps) {
             <span className="text-sm font-medium">整合报告</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-xs">
               {formatDate(report?.createdAt ?? "", "long")}
             </Badge>
             <Button

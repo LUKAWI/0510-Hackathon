@@ -8,7 +8,7 @@ export function BottomBar() {
   const error = useProcessingStore((s) => s.error);
 
   return (
-    <footer className="flex h-8 shrink-0 items-center gap-3 border-t border-border bg-primary px-4 text-xs tracking-wide text-primary-foreground/60 dark:bg-card dark:text-foreground dark:border-border">
+    <footer className="flex h-8 shrink-0 items-center gap-3 bg-primary px-4 text-xs tracking-wide text-primary-foreground/60 dark:bg-card dark:text-foreground">
       <div className="flex items-center gap-1.5">
         <Database className="size-3" />
         <span>Neon PostgreSQL</span>

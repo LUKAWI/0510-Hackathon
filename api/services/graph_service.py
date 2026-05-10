@@ -8,6 +8,7 @@ from uuid import uuid4
 import asyncpg
 
 from api.core.database import DatabasePool
+from api.core.embedding import EmbeddingService
 
 logger = logging.getLogger(__name__)
 
@@ -16,20 +17,29 @@ async def store_knowledge_units(
     units: list[dict],
     textbook_id: str,
     chapter_id: str | None = None,
+    embedding_service: EmbeddingService | None = None,
 ) -> list[str]:
     """存储知识单元到数据库，返回生成的 ID 列表。"""
     pool = await DatabasePool.get_pool()
     unit_ids: list[str] = []
 
+    for unit in units:
+        unit_id = unit.get("id") or str(uuid4())
+        unit_ids.append(unit_id)
+
+    embeddings: list[list[float] | None] = [None] * len(units)
+    if embedding_service is not None and units:
+        texts = [f"{u.get('name', '')} {u.get('definition', '')}" for u in units]
+        embeddings = embedding_service.encode(texts)
+
     async with pool.acquire() as conn:
-        for unit in units:
-            unit_id = unit.get("id", str(uuid4()))
+        for i, unit in enumerate(units):
             await conn.execute(
                 """
-                INSERT INTO knowledge_units (id, textbook_id, chapter_id, name, definition, category, content, keywords)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO knowledge_units (id, textbook_id, chapter_id, name, definition, category, content, keywords, embedding)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 """,
-                uuid4() if not unit_id else unit_id,
+                unit_ids[i],
                 textbook_id,
                 chapter_id,
                 unit.get("name", ""),
@@ -37,8 +47,8 @@ async def store_knowledge_units(
                 unit.get("category", "概念"),
                 unit.get("content", ""),
                 unit.get("keywords", []),
+                embeddings[i],
             )
-            unit_ids.append(unit_id)
 
     logger.info("存储了 %d 个知识单元", len(unit_ids))
     return unit_ids

@@ -30,10 +30,28 @@ class Citation(BaseModel):
     relevance: float
 
 
+class GraphContextNode(BaseModel):
+    id: str
+    label: str
+    type: str
+
+
+class GraphContextEdge(BaseModel):
+    source: str
+    target: str
+    relation: str
+
+
+class GraphContext(BaseModel):
+    nodes: list[GraphContextNode]
+    edges: list[GraphContextEdge]
+
+
 class RAGResponse(BaseModel):
     answer: str
     citations: list[Citation]
     source_chunks: list[str]
+    graph_context: GraphContext | None = None
 
 
 class IndexStatusResponse(BaseModel):
@@ -63,6 +81,7 @@ async def rag_query(request: RAGRequest):
         llm_client=llm_client,
         question=request.question,
         top_k=request.top_k,
+        pool=pool,
     )
 
     return RAGResponse(**result)

@@ -1,3 +1,3 @@
-- [ ] .gitignore 排除了临时文件（_vite_temp/、stderr.txt、stdout.txt、test_backend.py）
-- [ ] git push 成功无报错
-- [ ] github.com/LUKAWI/0510-Hackathon 显示最新提交
+- [x] .gitignore 排除了临时文件（_vite_temp/、stderr.txt、stdout.txt、test_backend.py）
+- [x] git push 成功无报错
+- [x] github.com/LUKAWI/0510-Hackathon 显示最新提交
