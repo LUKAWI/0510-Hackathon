@@ -10,9 +10,13 @@ from uuid import uuid4
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from api.core.config import settings
 from api.core.database import DatabasePool
 from api.core.embedding import EmbeddingService
+from api.core.llm_client import LLMClient
 from api.core.vector_store import VectorStore
+from api.services.extract_service import extract_knowledge_units
+from api.services.graph_service import store_knowledge_units, store_relationships
 from api.services.parse_service import parse_file
 
 logger = logging.getLogger(__name__)
@@ -115,14 +119,17 @@ async def _process_textbook_background(
         chapters, total_chars = parse_file(file_path)
         pool = await DatabasePool.get_pool()
 
+        chapter_ids: list[str] = []
         async with pool.acquire() as conn:
             for ch in chapters:
+                cid = str(uuid4())
+                chapter_ids.append(cid)
                 await conn.execute(
                     """
                     INSERT INTO chapters (id, textbook_id, chapter_index, title, page_start, page_end, content, char_count)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     """,
-                    uuid4(), textbook_id, ch["chapter_index"], ch["title"],
+                    cid, textbook_id, ch["chapter_index"], ch["title"],
                     ch.get("page_start", 0), ch.get("page_end", 0),
                     ch["content"], ch["char_count"],
                 )
@@ -157,7 +164,59 @@ async def _process_textbook_background(
             vector_store = VectorStore(pool)
             await vector_store.add_chunks(chunks_to_embed)
 
-        logger.info("教材处理完成: %s, %d 章节, %d 字", filename, len(chapters), total_chars)
+        logger.info("开始知识提取: %s", filename)
+        llm_client = LLMClient(api_key=settings.DASHSCOPE_API_KEY, model=settings.LLM_MODEL_NAME)
+
+        all_units: list[dict] = []
+        unit_name_to_id: dict[str, str] = {}
+
+        for idx, ch in enumerate(chapters):
+            cid = chapter_ids[idx] if idx < len(chapter_ids) else None
+            try:
+                result = extract_knowledge_units(
+                    llm_client=llm_client,
+                    textbook_name=filename,
+                    chapter_title=ch["title"],
+                    chapter_content=ch["content"],
+                )
+
+                chapter_units = result.get("knowledge_units", [])
+                chapter_relationships = result.get("relationships", [])
+
+                if not chapter_units:
+                    logger.warning("章节 %s 未提取到知识单元", ch["title"])
+                    continue
+
+                for unit in chapter_units:
+                    uid = unit.get("id") or str(uuid4())
+                    unit_name_to_id[unit.get("name", "")] = uid
+                    all_units.append({**unit, "id": uid})
+
+                if chapter_units and cid:
+                    await store_knowledge_units(
+                        units=chapter_units,
+                        textbook_id=textbook_id,
+                        chapter_id=cid,
+                        embedding_service=embedding_service,
+                    )
+
+                    if chapter_relationships:
+                        await store_relationships(chapter_relationships, unit_name_to_id)
+
+                logger.info(
+                    "章节 %s 知识提取完成: %d 单元, %d 关系",
+                    ch["title"], len(chapter_units), len(chapter_relationships),
+                )
+
+            except Exception as extract_err:
+                logger.warning(
+                    "章节 %s 知识提取失败，跳过: %s", ch["title"], extract_err
+                )
+
+        logger.info(
+            "教材处理完成: %s, %d 章节, %d 字, %d 知识单元",
+            filename, len(chapters), total_chars, len(all_units),
+        )
 
     except Exception as e:
         logger.error("教材处理失败: %s - %s", filename, e, exc_info=True)
